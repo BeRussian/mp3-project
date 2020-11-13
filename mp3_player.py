@@ -1,20 +1,17 @@
 import requests
 import json
- # HW: use it
 from lyrics_api import *
 from song import *
-from playsound import playsound
-
 import pygame
 import time
+from colors import TerminalColor
 
-import math
-from song import *
 
 class MP3:
     def __init__(self):
         self.songs=[]
         self.create_existing_songs()
+        pygame.init()
 
     def run(self):
         print("welcome") 
@@ -44,23 +41,22 @@ class MP3:
         print("would you like to create a new song?")
         choice=input()
         if choice=="yes":
-            song_name= input("Enter name of song: ")
-            artist_name=  input("input name of artist: ")
-            album_name =input("Enter name of album: ")
-            length=input("Enter length of song in seconds: ")
-            self.songs.append(Song(song_name,artist_name,album_name,length))   
+            song_name = input("Enter name of song: ")
+            artist_name = input("input name of artist: ")
+            album_name = input("Enter name of album: ")
+            length = input("Enter length of song in seconds: ")
+
+            self.songs.append(Song(song_name,artist_name,album_name,length))
+
+            songs = json.load(open("songs.json", "r"))
+            new_song_dict = {"name": song_name, "artist": artist_name, "album": album_name, "length": length}
+            songs.append(new_song_dict)
+            json.dump(songs, open("songs.json", "w"))
 
     def create_existing_songs(self):
-        #create's 4 songs
-        
-        S1=Song("alone","alan walker","all falls down",163)#1
-        S2=Song("see you again","noroz","noroz is on fire",250)#2
-        S3=Song("all falls down","alan walker","all falls down",163)#3
-        S4=Song("Diamond heart","alan walker","all falls down",163)#4
-        self.songs.append(S1)
-        self.songs.append(S2)
-        self.songs.append(S3)
-        self.songs.append(S4)
+        songs = json.load(open("songs.json", "r"))
+        for song_dict in songs:
+            self.songs.append(Song(song_dict["name"], song_dict["artist"], song_dict["album"], song_dict["length"]))
 
     def print_songs(self):
         print("Do you want to see the song list?")
@@ -68,32 +64,40 @@ class MP3:
         if choice=="yes":
             for x in self.songs:
                 print(x.name)
+    
+    def print_lyrics(self, artist_name, song_name):
+        lyrics = self.search_lyrics(artist_name, song_name)
+        time_between_lines = self.calculate_time_between_lines(artist_name, song_name)
+        for line in lyrics:
+            print(line)
+            time.sleep(time_between_lines)
 
     def play_song(self):
-        # HW: try to actually play the song (hint: you need an external package (import and stuff))
-        # HW: print lyrics line every second (hint: use time.sleep function)
-        path="C:\\Users\\user\\Desktop\\cyberWithRon\\pyhton\mp3-project\\songs\\"
-        artist_name=""
         choice=input("Would you like to play a song?\n")
         if choice=="yes":
-            songName=input("Which song would you like to play?")
-            for i in self.songs:
-                if i.name==songName:
-                    artist_name=i.artist
-            if(songName=="alone"):
-                print(self.search_lyrics(artist_name,songName))
-                #playsound(f""+path+songName+".mp3")
-                pygame.init()
-                pygame.mixer.music.load(f""+path+songName+".mp3")
-                pygame.mixer.music.play(0)
-                time.sleep(5)
-                print("5 seconds")
-                 
+            song_name=input("Which song would you like to play?")
+            for song in self.songs:
+                if song.name==song_name:
+                    artist_name=song.artist
+                    break
+            try:
+                pygame.mixer.music.load(f"songs\\{song_name}.mp3")
+                pygame.mixer.music.play()
+                self.print_lyrics(artist_name, song_name)
+            except pygame.error as error:
+                print(f"{TerminalColor.FAIL}Failed to play song. {error}{TerminalColor.ENDC}")
 
-    def caculate_time_between_lines(self,name):
-        for i in self.songs:
-            if i.name==name:
-                length=i.length
+    def pause_music(self):
+        pygame.mixer.music.pause()
+    
+    def resume_music(self):
+        pygame.mixer.music.unpause()
+
+    def calculate_time_between_lines(self, artist, name):
+        for song in self.songs:
+            if song.name == name and song.artist == artist:
+                lyrics = self.search_lyrics(artist, name)
+                return song.length / len(lyrics)
 
     def print_info_about_song(self):
         choice=input("would you like to get information about a spesific song?\n")
@@ -103,26 +107,21 @@ class MP3:
                 song_name=input("Enter songs name\n")
                 for i in self.songs:
                     if i.name==song_name:
-                        i.toString
+                        i.print_details()
                         
             if search_type=="2":
                 artist_name=input("Enter artist name\n")
                 for i in self.songs:
                     if i.artist==artist_name:
-                        i.toString
+                        i.print_details()
 
             if search_type=="3":
                 album_name=input("Enter album name\n")
                 for i in self.songs:
                     if i.album==album_name:
-                        i.toString
+                        i.print_details()
 
-    
-   
-
-    
-
-    def search_lyrics(self,artist_name,track_name,):
+    def search_lyrics(self,artist_name,track_name):
         api_call = base_url + lyrics_matcher + format_url + artist_search_parameter + artist_name + track_search_parameter + track_name + api_key
         request = requests.get(api_call)
         data = request.json()
@@ -130,7 +129,7 @@ class MP3:
         print("API Call: " + api_call)
         print()
         lyrics=(data['lyrics']['lyrics_body'])
-        return lyrics
+        return lyrics.split("\n")[:-2]
 
         
 
