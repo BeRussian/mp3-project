@@ -1,10 +1,18 @@
 import requests
 import json
-from lyrics_api import *
 from song import *
 import pygame
 import time
 from colors import TerminalColor
+import threading
+#import multiprocessing 
+
+from lyrics_api import base_url
+from lyrics_api import lyrics_matcher
+from lyrics_api import format_url
+from lyrics_api import artist_search_parameter
+from lyrics_api import track_search_parameter
+from lyrics_api import api_key
 
 
 class MP3:
@@ -14,7 +22,10 @@ class MP3:
         pygame.init()
 
     def run(self):
-        print("welcome") 
+        print(f"{TerminalColor.HEADER}welcome{TerminalColor.ENDC}") 
+        print(f"{TerminalColor.OKBLUE}welcome{TerminalColor.ENDC}") 
+        print(f"{TerminalColor.OKGREEN}welcome{TerminalColor.ENDC}") 
+        print(f"{TerminalColor.WARNING}welcome{TerminalColor.ENDC}") 
 
         while True:
             self.create_new_song()
@@ -63,7 +74,7 @@ class MP3:
         choice=input()
         if choice=="yes":
             for x in self.songs:
-                print(x.name)
+                print(f"{TerminalColor.OKGREEN}{x.name}{TerminalColor.ENDC}")
     
     def print_lyrics(self, artist_name, song_name):
         lyrics = self.search_lyrics(artist_name, song_name)
@@ -72,10 +83,14 @@ class MP3:
             print(line)
             time.sleep(time_between_lines)
 
+    def run_function_in_the_background(self,function):
+        thread = threading.Thread(target=function)
+        thread.start()
+      
     def play_song(self):
         choice=input("Would you like to play a song?\n")
         if choice=="yes":
-            song_name=input("Which song would you like to play?")
+            song_name=input("Which song would you like to play?\n")
             for song in self.songs:
                 if song.name==song_name:
                     artist_name=song.artist
@@ -83,12 +98,16 @@ class MP3:
             try:
                 pygame.mixer.music.load(f"songs\\{song_name}.mp3")
                 pygame.mixer.music.play()
-                self.print_lyrics(artist_name, song_name)
+                print(f"{TerminalColor.WARNING}If you wish to pause the song enter 'p'{TerminalColor.ENDC}")
+                self.run_function_in_the_background(self.print_lyrics(artist_name,song_name))
+                self.pause_music()
             except pygame.error as error:
                 print(f"{TerminalColor.FAIL}Failed to play song. {error}{TerminalColor.ENDC}")
-
+                
     def pause_music(self):
-        pygame.mixer.music.pause()
+        if input()=="p":
+            pygame.mixer.music.pause()
+        
     
     def resume_music(self):
         pygame.mixer.music.unpause()
@@ -97,7 +116,7 @@ class MP3:
         for song in self.songs:
             if song.name == name and song.artist == artist:
                 lyrics = self.search_lyrics(artist, name)
-                return song.length / len(lyrics)
+                return (song.length / len(lyrics))/4
 
     def print_info_about_song(self):
         choice=input("would you like to get information about a spesific song?\n")
@@ -126,7 +145,7 @@ class MP3:
         request = requests.get(api_call)
         data = request.json()
         data = data['message']['body']
-        print("API Call: " + api_call)
+        #print("API Call: " + api_call)
         print()
         lyrics=(data['lyrics']['lyrics_body'])
         return lyrics.split("\n")[:-2]

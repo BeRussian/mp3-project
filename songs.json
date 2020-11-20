@@ -1,1 +1,4 @@
-[{"name": "alone", "artist": "alan walker", "album": "all falls down", "length": 163}, {"name": "sorry", "artist": "justin beiber", "album": "wtf", "length": "125"}]
+[{"name": "alone", "artist": "alan walker", "album": "all falls down", "length": 163}, 
+{"name": "bohemian_rhapsody", "artist": "Qween", "album": "idk", "length": 600}, 
+{"name": "see_you_again", "artist": "Charlie Puth", "album": "idk", "length": 237},
+{"name": "yesterday", "artist": "The Beatles", "album": "idk", "length": 125}]

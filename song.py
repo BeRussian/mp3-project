@@ -18,5 +18,5 @@ class Song:
         min=math.floor(min)
         min=str(min)
         sec=str(self.length%60)
-        r=(f"Songs length is:" +min+ ":" +sec +" minutes ")
+        r=(f"Songs length is  {min} minutes and {sec}  seconds ")
         return r
