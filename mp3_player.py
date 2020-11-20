@@ -5,7 +5,6 @@ import pygame
 import time
 from colors import TerminalColor
 import threading
-#import multiprocessing 
 
 from lyrics_api import base_url
 from lyrics_api import lyrics_matcher
@@ -19,6 +18,7 @@ class MP3:
     def __init__(self):
         self.songs=[]
         self.create_existing_songs()
+        self.is_music_playing = False
         pygame.init()
 
     def run(self):
@@ -28,6 +28,23 @@ class MP3:
         print(f"{TerminalColor.WARNING}welcome{TerminalColor.ENDC}") 
 
         while True:
+            choice = input()
+            if choice=="pause":
+                pygame.mixer.music.pause()
+                self.is_music_playing = False
+            elif choice=="resume":
+                pygame.mixer.music.unpause()
+                self.is_music_playing = True
+            elif choice == "info":
+                self.print_info_about_song()
+            elif choice == "play":
+                self.play_song()
+
+            # HW: make this work...
+
+
+            self.run_function_in_the_background(self.control_music, [])
+
             self.create_new_song()
 
             self.print_songs()
@@ -35,7 +52,6 @@ class MP3:
             self.play_song()
 
             self.print_info_about_song()
-
 
             choice = input("Would you like to exit? (yes/no)\n")
             if choice == "yes":
@@ -70,8 +86,7 @@ class MP3:
             self.songs.append(Song(song_dict["name"], song_dict["artist"], song_dict["album"], song_dict["length"]))
 
     def print_songs(self):
-        print("Do you want to see the song list?")
-        choice=input()
+        choice=input("Do you want to see the song list?\n")
         if choice=="yes":
             for x in self.songs:
                 print(f"{TerminalColor.OKGREEN}{x.name}{TerminalColor.ENDC}")
@@ -80,11 +95,12 @@ class MP3:
         lyrics = self.search_lyrics(artist_name, song_name)
         time_between_lines = self.calculate_time_between_lines(artist_name, song_name)
         for line in lyrics:
-            print(line)
-            time.sleep(time_between_lines)
+            if self.is_music_playing:
+                print(line)
+                time.sleep(time_between_lines)
 
-    def run_function_in_the_background(self,function):
-        thread = threading.Thread(target=function)
+    def run_function_in_the_background(self,function, args):
+        thread = threading.Thread(target=function, args=args)
         thread.start()
       
     def play_song(self):
@@ -98,19 +114,27 @@ class MP3:
             try:
                 pygame.mixer.music.load(f"songs\\{song_name}.mp3")
                 pygame.mixer.music.play()
-                print(f"{TerminalColor.WARNING}If you wish to pause the song enter 'p'{TerminalColor.ENDC}")
-                self.run_function_in_the_background(self.print_lyrics(artist_name,song_name))
-                self.pause_music()
+                self.is_music_playing = True
+                print(f"{TerminalColor.WARNING}Enter 'pause'/'resume' to do so...{TerminalColor.ENDC}")
+                self.run_function_in_the_background(self.print_lyrics, [artist_name, song_name])
             except pygame.error as error:
                 print(f"{TerminalColor.FAIL}Failed to play song. {error}{TerminalColor.ENDC}")
                 
-    def pause_music(self):
-        if input()=="p":
-            pygame.mixer.music.pause()
-        
+    def control_music(self):
+        # HW: this should be the main function (let's call it user_control)
+        while True:
+            choice = input()
+            if choice=="pause":
+                pygame.mixer.music.pause()
+                self.is_music_playing = False
+            elif choice=="resume":
+                pygame.mixer.music.unpause()
+                self.is_music_playing = True
+            elif choice == "info":
+                self.print_info_about_song()
     
-    def resume_music(self):
-        pygame.mixer.music.unpause()
+    # def resume_music(self):
+    #     pygame.mixer.music.unpause()
 
     def calculate_time_between_lines(self, artist, name):
         for song in self.songs:
